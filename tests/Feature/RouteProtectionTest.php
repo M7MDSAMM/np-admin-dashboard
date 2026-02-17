@@ -2,42 +2,50 @@
 
 namespace Tests\Feature;
 
-use App\Application\Auth\AdminSessionService;
+use App\Services\Contracts\AdminAuthServiceInterface;
+use App\Services\Contracts\AdminManagementServiceInterface;
 use Mockery;
 use Tests\TestCase;
 
 class RouteProtectionTest extends TestCase
 {
-    private function mockSession(bool $authenticated = false, bool $superAdmin = false, array $admin = []): void
+    /**
+     * Helper: bind a mock AdminAuthServiceInterface into the container.
+     *
+     * This lets us control authentication state without hitting the
+     * User Service API. The mock is bound to the interface so that
+     * middleware and controllers resolve it automatically.
+     */
+    private function mockAuth(bool $authenticated = false, bool $superAdmin = false, array $admin = []): void
     {
-        $mock = Mockery::mock(AdminSessionService::class);
+        $mock = Mockery::mock(AdminAuthServiceInterface::class);
         $mock->shouldReceive('isAuthenticated')->andReturn($authenticated);
         $mock->shouldReceive('isSuperAdmin')->andReturn($superAdmin);
         $mock->shouldReceive('getAdmin')->andReturn($admin ?: null);
         $mock->shouldReceive('getToken')->andReturn($authenticated ? 'test-token' : null);
 
-        $this->app->instance(AdminSessionService::class, $mock);
+        $this->app->instance(AdminAuthServiceInterface::class, $mock);
     }
 
     // ── Guest ───────────────────────────────────────────────────────────
 
     public function test_login_page_is_accessible(): void
     {
-        $this->mockSession();
+        $this->mockAuth();
 
         $this->get('/login')->assertOk();
     }
 
     public function test_dashboard_redirects_to_login_when_unauthenticated(): void
     {
-        $this->mockSession();
+        $this->mockAuth();
 
         $this->get('/')->assertRedirect(route('login'));
     }
 
     public function test_admins_redirects_to_login_when_unauthenticated(): void
     {
-        $this->mockSession();
+        $this->mockAuth();
 
         $this->get('/admins')->assertRedirect(route('login'));
     }
@@ -46,7 +54,7 @@ class RouteProtectionTest extends TestCase
 
     public function test_dashboard_accessible_when_authenticated(): void
     {
-        $this->mockSession(true, false, [
+        $this->mockAuth(true, false, [
             'uuid' => 'u', 'name' => 'Admin', 'email' => 'a@t.com', 'role' => 'admin',
         ]);
 
@@ -55,7 +63,7 @@ class RouteProtectionTest extends TestCase
 
     public function test_admins_forbidden_for_regular_admin(): void
     {
-        $this->mockSession(true, false, [
+        $this->mockAuth(true, false, [
             'uuid' => 'u', 'name' => 'Admin', 'email' => 'a@t.com', 'role' => 'admin',
         ]);
 
@@ -64,7 +72,7 @@ class RouteProtectionTest extends TestCase
 
     public function test_create_admin_forbidden_for_regular_admin(): void
     {
-        $this->mockSession(true, false, [
+        $this->mockAuth(true, false, [
             'uuid' => 'u', 'name' => 'Admin', 'email' => 'a@t.com', 'role' => 'admin',
         ]);
 
@@ -75,11 +83,12 @@ class RouteProtectionTest extends TestCase
 
     public function test_admins_accessible_for_super_admin(): void
     {
-        $adminClient = Mockery::mock(\App\Domain\Admin\AdminClientInterface::class);
-        $adminClient->shouldReceive('list')->andReturn(['data' => [], 'pagination' => null]);
-        $this->app->instance(\App\Domain\Admin\AdminClientInterface::class, $adminClient);
+        // Mock the management service so the controller doesn't make real HTTP calls.
+        $adminService = Mockery::mock(AdminManagementServiceInterface::class);
+        $adminService->shouldReceive('listAdmins')->andReturn(['data' => [], 'pagination' => null]);
+        $this->app->instance(AdminManagementServiceInterface::class, $adminService);
 
-        $this->mockSession(true, true, [
+        $this->mockAuth(true, true, [
             'uuid' => 'u', 'name' => 'Super', 'email' => 's@t.com', 'role' => 'super_admin',
         ]);
 
@@ -88,7 +97,7 @@ class RouteProtectionTest extends TestCase
 
     public function test_create_admin_accessible_for_super_admin(): void
     {
-        $this->mockSession(true, true, [
+        $this->mockAuth(true, true, [
             'uuid' => 'u', 'name' => 'Super', 'email' => 's@t.com', 'role' => 'super_admin',
         ]);
 

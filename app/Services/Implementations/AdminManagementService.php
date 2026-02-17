@@ -1,29 +1,39 @@
 <?php
 
-namespace App\Application\Admin;
+namespace App\Services\Implementations;
 
-use App\Domain\Admin\AdminClientInterface;
+use App\Services\Contracts\AdminManagementServiceInterface;
+use App\Services\Contracts\UserServiceClientInterface;
 use Illuminate\Support\Facades\Log;
 
-class AdminManagementService
+/**
+ * Business logic layer for admin CRUD operations.
+ *
+ * This service delegates HTTP calls to the UserServiceClient and adds
+ * cross-cutting concerns (audit logging). Controllers call this service
+ * instead of the client directly, keeping controllers thin.
+ *
+ * Pattern:  Controller → this Service → UserServiceClient → User Service API
+ */
+class AdminManagementService implements AdminManagementServiceInterface
 {
     public function __construct(
-        private readonly AdminClientInterface $adminClient,
+        private readonly UserServiceClientInterface $client,
     ) {}
 
     public function listAdmins(string $token, int $page = 1, int $perPage = 15): array
     {
-        return $this->adminClient->list($token, $page, $perPage);
+        return $this->client->listAdmins($token, $page, $perPage);
     }
 
     public function findAdmin(string $token, string $uuid): ?array
     {
-        return $this->adminClient->find($token, $uuid);
+        return $this->client->findAdmin($token, $uuid);
     }
 
     public function createAdmin(string $token, array $data): array
     {
-        $admin = $this->adminClient->create($token, $data);
+        $admin = $this->client->createAdmin($token, $data);
 
         Log::info('admin.created', [
             'created_uuid' => $admin['uuid'] ?? null,
@@ -35,7 +45,7 @@ class AdminManagementService
 
     public function updateAdmin(string $token, string $uuid, array $data): array
     {
-        $admin = $this->adminClient->update($token, $uuid, $data);
+        $admin = $this->client->updateAdmin($token, $uuid, $data);
 
         Log::info('admin.updated', ['updated_uuid' => $uuid]);
 
@@ -44,7 +54,7 @@ class AdminManagementService
 
     public function deleteAdmin(string $token, string $uuid): bool
     {
-        $result = $this->adminClient->delete($token, $uuid);
+        $result = $this->client->deleteAdmin($token, $uuid);
 
         Log::info('admin.deleted', ['deleted_uuid' => $uuid]);
 
@@ -53,7 +63,7 @@ class AdminManagementService
 
     public function toggleActive(string $token, string $uuid): array
     {
-        $admin = $this->adminClient->toggleActive($token, $uuid);
+        $admin = $this->client->toggleActive($token, $uuid);
 
         Log::info('admin.toggled_active', [
             'toggled_uuid' => $uuid,

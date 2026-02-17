@@ -67,25 +67,19 @@
             </div>
         </header>
 
-        {{-- Flash messages --}}
-        <div class="px-4 sm:px-6 lg:px-8">
-            @if (session('success'))
-            <div class="mt-4 rounded-lg bg-green-50 p-4 border border-green-200" x-data="{ show: true }" x-show="show">
-                <div class="flex items-center justify-between">
-                    <p class="text-sm text-green-700">{{ session('success') }}</p>
-                    <button @click="show = false" class="text-green-500 hover:text-green-700"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg></button>
-                </div>
-            </div>
-            @endif
-            @if (session('error'))
-            <div class="mt-4 rounded-lg bg-red-50 p-4 border border-red-200" x-data="{ show: true }" x-show="show">
-                <div class="flex items-center justify-between">
-                    <p class="text-sm text-red-700">{{ session('error') }}</p>
-                    <button @click="show = false" class="text-red-500 hover:text-red-700"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg></button>
-                </div>
-            </div>
-            @endif
-        </div>
+        {{-- Flash messages → SweetAlert2 toasts --}}
+        @if (session('success') || session('error'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                @if (session('success'))
+                Toast.fire({ icon: 'success', title: @js(session('success')) });
+                @endif
+                @if (session('error'))
+                Toast.fire({ icon: 'error', title: @js(session('error')) });
+                @endif
+            });
+        </script>
+        @endif
 
         <main class="py-6 px-4 sm:px-6 lg:px-8">@yield('content')</main>
     </div>

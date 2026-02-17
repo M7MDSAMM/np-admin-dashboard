@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Create Admin')
 @section('content')
-<div class="mx-auto max-w-2xl">
+<div class="mx-auto max-w-2xl" x-data="adminCreateForm()">
     <div class="mb-6">
         <a href="{{ route('admins.index') }}" class="inline-flex items-center gap-x-1 text-sm text-gray-500 hover:text-gray-700">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
@@ -13,40 +13,106 @@
             <h3 class="text-base font-semibold text-gray-900">Create New Admin</h3>
             <p class="mt-1 text-sm text-gray-500">Add a new administrator to the platform.</p>
         </div>
-        <form method="POST" action="{{ route('admins.store') }}" class="px-6 py-6 space-y-5">
-            @csrf
+        <form @submit.prevent="submit" class="px-6 py-6 space-y-5">
             <div>
                 <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
-                <input type="text" name="name" id="name" value="{{ old('name') }}" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none sm:text-sm">
-                @error('name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                <input type="text" id="name" x-model="form.name" class="mt-1 block w-full rounded-lg border px-3 py-2 text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none sm:text-sm" :class="errors.name ? 'border-red-300' : 'border-gray-300'">
+                <template x-if="errors.name">
+                    <p class="mt-1 text-sm text-red-600" x-text="errors.name[0]"></p>
+                </template>
             </div>
             <div>
                 <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
-                <input type="email" name="email" id="email" value="{{ old('email') }}" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none sm:text-sm">
-                @error('email')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                <input type="email" id="email" x-model="form.email" class="mt-1 block w-full rounded-lg border px-3 py-2 text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none sm:text-sm" :class="errors.email ? 'border-red-300' : 'border-gray-300'">
+                <template x-if="errors.email">
+                    <p class="mt-1 text-sm text-red-600" x-text="errors.email[0]"></p>
+                </template>
             </div>
             <div>
                 <label for="role" class="block text-sm font-medium text-gray-700">Role</label>
-                <select name="role" id="role" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none sm:text-sm">
-                    <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>Admin</option>
-                    <option value="super_admin" {{ old('role') === 'super_admin' ? 'selected' : '' }}>Super Admin</option>
+                <select id="role" x-model="form.role" class="mt-1 block w-full rounded-lg border px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none sm:text-sm" :class="errors.role ? 'border-red-300' : 'border-gray-300'">
+                    <option value="">Select a role</option>
+                    <option value="admin">Admin</option>
+                    <option value="super_admin">Super Admin</option>
                 </select>
-                @error('role')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                <template x-if="errors.role">
+                    <p class="mt-1 text-sm text-red-600" x-text="errors.role[0]"></p>
+                </template>
             </div>
             <div>
                 <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" name="password" id="password" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none sm:text-sm" placeholder="Minimum 8 characters">
-                @error('password')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                <input type="password" id="password" x-model="form.password" placeholder="Minimum 8 characters" class="mt-1 block w-full rounded-lg border px-3 py-2 text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none sm:text-sm" :class="errors.password ? 'border-red-300' : 'border-gray-300'">
+                <template x-if="errors.password">
+                    <p class="mt-1 text-sm text-red-600" x-text="errors.password[0]"></p>
+                </template>
             </div>
             <div>
                 <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirm Password</label>
-                <input type="password" name="password_confirmation" id="password_confirmation" required class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none sm:text-sm">
+                <input type="password" id="password_confirmation" x-model="form.password_confirmation" class="mt-1 block w-full rounded-lg border px-3 py-2 text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none sm:text-sm" :class="errors.password_confirmation ? 'border-red-300' : 'border-gray-300'">
+                <template x-if="errors.password_confirmation">
+                    <p class="mt-1 text-sm text-red-600" x-text="errors.password_confirmation[0]"></p>
+                </template>
             </div>
             <div class="flex items-center justify-end gap-x-3 pt-4 border-t border-gray-100">
                 <a href="{{ route('admins.index') }}" class="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</a>
-                <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors">Create Admin</button>
+                <button type="submit" :disabled="loading" class="inline-flex items-center gap-x-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg x-show="loading" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                    <span x-text="loading ? 'Creating...' : 'Create Admin'"></span>
+                </button>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+function adminCreateForm() {
+    return {
+        loading: false,
+        form: { name: '', email: '', role: '', password: '', password_confirmation: '' },
+        errors: {},
+
+        validate() {
+            this.errors = {};
+            if (!this.form.name.trim()) this.errors.name = ['The name field is required.'];
+            else if (this.form.name.length > 150) this.errors.name = ['The name must not exceed 150 characters.'];
+
+            if (!this.form.email.trim()) this.errors.email = ['The email field is required.'];
+            else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email)) this.errors.email = ['Please enter a valid email address.'];
+
+            if (!this.form.role) this.errors.role = ['The role field is required.'];
+
+            if (!this.form.password) this.errors.password = ['The password field is required.'];
+            else if (this.form.password.length < 8) this.errors.password = ['The password must be at least 8 characters.'];
+
+            if (this.form.password && this.form.password !== this.form.password_confirmation) {
+                this.errors.password_confirmation = ['The password confirmation does not match.'];
+            }
+
+            return Object.keys(this.errors).length === 0;
+        },
+
+        submit() {
+            if (!this.validate()) return;
+
+            this.loading = true;
+            axios.post('{{ route("admins.store") }}', this.form)
+                .then((res) => {
+                    Toast.fire({ icon: 'success', title: res.data.message });
+                    setTimeout(() => { window.location.href = '{{ route("admins.index") }}'; }, 1000);
+                })
+                .catch((err) => {
+                    if (err.response && err.response.status === 422) {
+                        this.errors = err.response.data.errors || {};
+                        if (err.response.data.message) {
+                            Toast.fire({ icon: 'error', title: err.response.data.message });
+                        }
+                    } else {
+                        Toast.fire({ icon: 'error', title: 'An unexpected error occurred.' });
+                    }
+                })
+                .finally(() => { this.loading = false; });
+        },
+    };
+}
+</script>
 @endsection

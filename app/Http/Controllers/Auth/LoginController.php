@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Application\Auth\AdminSessionService;
 use App\Http\Controllers\Controller;
+use App\Services\Contracts\AdminAuthServiceInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -11,12 +11,13 @@ use Illuminate\View\View;
 class LoginController extends Controller
 {
     public function __construct(
-        private readonly AdminSessionService $sessionService,
+        private readonly AdminAuthServiceInterface $auth,
     ) {}
 
     public function showLoginForm(): View|RedirectResponse
     {
-        if ($this->sessionService->isAuthenticated()) {
+        // Already logged in? Skip straight to the dashboard.
+        if ($this->auth->isAuthenticated()) {
             return redirect()->route('dashboard');
         }
 
@@ -30,7 +31,7 @@ class LoginController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if ($this->sessionService->attemptLogin($request->input('email'), $request->input('password'))) {
+        if ($this->auth->attemptLogin($request->input('email'), $request->input('password'))) {
             return redirect()->route('dashboard');
         }
 
@@ -41,7 +42,7 @@ class LoginController extends Controller
 
     public function logout(): RedirectResponse
     {
-        $this->sessionService->logout();
+        $this->auth->logout();
 
         return redirect()->route('login')->with('success', 'You have been logged out.');
     }
