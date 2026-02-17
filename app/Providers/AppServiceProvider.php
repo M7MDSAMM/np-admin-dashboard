@@ -4,9 +4,11 @@ namespace App\Providers;
 
 use App\Services\Contracts\AdminAuthServiceInterface;
 use App\Services\Contracts\AdminManagementServiceInterface;
+use App\Services\Contracts\UserManagementServiceInterface;
 use App\Services\Contracts\UserServiceClientInterface;
 use App\Services\Implementations\AdminAuthService;
 use App\Services\Implementations\AdminManagementService;
+use App\Services\Implementations\UserManagementService;
 use App\Services\Implementations\UserServiceClient;
 use Illuminate\Support\ServiceProvider;
 
@@ -45,6 +47,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             AdminManagementServiceInterface::class,
             AdminManagementService::class,
+        );
+
+        // Recipient user management business logic.
+        $this->app->singleton(
+            UserManagementServiceInterface::class,
+            UserManagementService::class,
         );
     }
 

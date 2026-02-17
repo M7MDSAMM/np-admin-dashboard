@@ -82,4 +82,31 @@ interface UserServiceClientInterface
      * @throws \App\Services\Exceptions\ExternalServiceException
      */
     public function toggleActive(string $token, string $uuid): array;
+
+    // ── Recipient User Management ───────────────────────────────────────
+
+    /** @return array{data: array, pagination: array|null} */
+    public function listUsers(string $token, array $query = []): array;
+
+    public function findUser(string $token, string $uuid): ?array;
+
+    public function createUser(string $token, array $data): array;
+
+    public function updateUser(string $token, string $uuid, array $data): array;
+
+    public function deleteUser(string $token, string $uuid): bool;
+
+    // ── User Preferences ────────────────────────────────────────────────
+
+    public function getUserPreferences(string $token, string $uuid): array;
+
+    public function updateUserPreferences(string $token, string $uuid, array $data): array;
+
+    // ── User Devices ────────────────────────────────────────────────────
+
+    public function listUserDevices(string $token, string $uuid): array;
+
+    public function addUserDevice(string $token, string $uuid, array $data): array;
+
+    public function deleteUserDevice(string $token, string $userUuid, string $deviceUuid): bool;
 }

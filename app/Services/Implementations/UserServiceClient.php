@@ -108,6 +108,95 @@ class UserServiceClient implements UserServiceClientInterface
         return $this->extractData($response, 'Failed to toggle admin status');
     }
 
+    // ── Recipient User Management ───────────────────────────────────────
+
+    public function listUsers(string $token, array $query = []): array
+    {
+        $response = $this->authenticatedRequest($token)->get('users', $query);
+
+        $json = $response->json();
+
+        if ($response->successful() && ($json['success'] ?? false)) {
+            return [
+                'data'       => $json['data'] ?? [],
+                'pagination' => $json['meta']['pagination'] ?? null,
+            ];
+        }
+
+        throw new ExternalServiceException('Failed to fetch user list', $response->status());
+    }
+
+    public function findUser(string $token, string $uuid): ?array
+    {
+        $response = $this->authenticatedRequest($token)->get("users/{$uuid}");
+
+        if ($response->status() === 404) {
+            return null;
+        }
+
+        return $this->extractData($response, 'Failed to fetch user');
+    }
+
+    public function createUser(string $token, array $data): array
+    {
+        $response = $this->authenticatedRequest($token)->post('users', $data);
+
+        return $this->extractDataOrThrowWithErrors($response, 'Failed to create user');
+    }
+
+    public function updateUser(string $token, string $uuid, array $data): array
+    {
+        $response = $this->authenticatedRequest($token)->put("users/{$uuid}", $data);
+
+        return $this->extractDataOrThrowWithErrors($response, 'Failed to update user');
+    }
+
+    public function deleteUser(string $token, string $uuid): bool
+    {
+        $response = $this->authenticatedRequest($token)->delete("users/{$uuid}");
+
+        return $response->successful();
+    }
+
+    // ── User Preferences ────────────────────────────────────────────────
+
+    public function getUserPreferences(string $token, string $uuid): array
+    {
+        $response = $this->authenticatedRequest($token)->get("users/{$uuid}/preferences");
+
+        return $this->extractData($response, 'Failed to fetch preferences');
+    }
+
+    public function updateUserPreferences(string $token, string $uuid, array $data): array
+    {
+        $response = $this->authenticatedRequest($token)->put("users/{$uuid}/preferences", $data);
+
+        return $this->extractDataOrThrowWithErrors($response, 'Failed to update preferences');
+    }
+
+    // ── User Devices ────────────────────────────────────────────────────
+
+    public function listUserDevices(string $token, string $uuid): array
+    {
+        $response = $this->authenticatedRequest($token)->get("users/{$uuid}/devices");
+
+        return $this->extractData($response, 'Failed to fetch devices');
+    }
+
+    public function addUserDevice(string $token, string $uuid, array $data): array
+    {
+        $response = $this->authenticatedRequest($token)->post("users/{$uuid}/devices", $data);
+
+        return $this->extractDataOrThrowWithErrors($response, 'Failed to add device');
+    }
+
+    public function deleteUserDevice(string $token, string $userUuid, string $deviceUuid): bool
+    {
+        $response = $this->authenticatedRequest($token)->delete("users/{$userUuid}/devices/{$deviceUuid}");
+
+        return $response->successful();
+    }
+
     // ── Private helpers ─────────────────────────────────────────────────
 
     /**
