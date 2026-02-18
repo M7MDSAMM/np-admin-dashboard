@@ -14,11 +14,16 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/health', fn () => response()->json([
-    'service' => config('app.name'),
-    'status'  => 'ok',
-    'time'    => now()->toIso8601String(),
-]));
+Route::get('/health', function () {
+    $version = env('APP_VERSION') ?: trim((string) shell_exec('git rev-parse --short HEAD')) ?: 'unknown';
+
+    return response()->json([
+        'service'   => config('app.name'),
+        'status'    => 'ok',
+        'time'      => now()->toIso8601String(),
+        'version'   => $version,
+    ]);
+});
 
 // ── Guest routes ────────────────────────────────────────────────────────
 Route::middleware('guest')->group(function () {
