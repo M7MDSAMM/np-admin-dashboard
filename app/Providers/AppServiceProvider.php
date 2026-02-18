@@ -5,10 +5,14 @@ namespace App\Providers;
 use App\Auth\NullUserProvider;
 use App\Services\Contracts\AdminAuthServiceInterface;
 use App\Services\Contracts\AdminManagementServiceInterface;
+use App\Services\Contracts\TemplateManagementServiceInterface;
+use App\Services\Contracts\TemplateServiceClientInterface;
 use App\Services\Contracts\UserManagementServiceInterface;
 use App\Services\Contracts\UserServiceClientInterface;
 use App\Services\Implementations\AdminAuthService;
 use App\Services\Implementations\AdminManagementService;
+use App\Services\Implementations\TemplateManagementService;
+use App\Services\Implementations\TemplateServiceClient;
 use App\Services\Implementations\UserManagementService;
 use App\Services\Implementations\UserServiceClient;
 use Illuminate\Support\Facades\Auth;
@@ -38,6 +42,10 @@ class AppServiceProvider extends ServiceProvider
             UserServiceClientInterface::class,
             UserServiceClient::class,
         );
+        $this->app->singleton(
+            TemplateServiceClientInterface::class,
+            TemplateServiceClient::class,
+        );
 
         // Admin authentication & session management.
         $this->app->singleton(
@@ -55,6 +63,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             UserManagementServiceInterface::class,
             UserManagementService::class,
+        );
+        $this->app->singleton(
+            TemplateManagementServiceInterface::class,
+            TemplateManagementService::class,
         );
     }
 

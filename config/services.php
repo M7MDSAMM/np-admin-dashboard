@@ -38,6 +38,9 @@ return [
     'user_service' => [
         'base_url' => env('USER_SERVICE_URL', 'http://localhost:8001/api/v1'),
     ],
+    'template_service' => [
+        'base_url' => env('TEMPLATE_SERVICE_URL', 'http://localhost:8004/api/v1'),
+    ],
 
     'notification_service' => [
         'base_url' => env('NOTIFICATION_SERVICE_URL', 'http://localhost:8002/api/v1'),
