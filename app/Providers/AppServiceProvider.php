@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Auth\NullUserProvider;
 use App\Services\Contracts\AdminAuthServiceInterface;
 use App\Services\Contracts\AdminManagementServiceInterface;
 use App\Services\Contracts\UserManagementServiceInterface;
@@ -10,6 +11,7 @@ use App\Services\Implementations\AdminAuthService;
 use App\Services\Implementations\AdminManagementService;
 use App\Services\Implementations\UserManagementService;
 use App\Services\Implementations\UserServiceClient;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -58,6 +60,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        //
+        Auth::provider('null', function () {
+            return new NullUserProvider();
+        });
     }
 }

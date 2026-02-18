@@ -61,8 +61,8 @@ return [
 
     'providers' => [
         'users' => [
-            'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
+            // Dashboard does not store users locally; use a null provider to short-circuit DB access.
+            'driver' => 'null',
         ],
 
         // 'users' => [
