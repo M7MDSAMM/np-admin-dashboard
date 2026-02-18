@@ -25,20 +25,34 @@ class HandleUnauthorizedRemoteMiddleware
         try {
             return $next($request);
         } catch (UnauthorizedRemoteException $e) {
-            $this->auth->logout();
+            // 401 → session is invalid; logout and redirect/login.
+            if ($e->statusCode === Response::HTTP_UNAUTHORIZED) {
+                $this->auth->logout();
+                $message = 'Session expired, please login again';
 
-            $message = 'Session expired, please login again';
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success'        => false,
+                        'message'        => $message,
+                        'error_code'     => $e->errorCode ?? 'AUTH_INVALID',
+                        'correlation_id' => $e->correlationId ?? $request->header('X-Correlation-Id', ''),
+                    ], 401);
+                }
 
+                return redirect()->route('login')->with('error', $message);
+            }
+
+            // 403 → keep session; show forbidden.
             if ($request->expectsJson()) {
                 return response()->json([
                     'success'        => false,
-                    'message'        => $message,
-                    'error_code'     => $e->errorCode ?? 'AUTH_INVALID',
+                    'message'        => $e->getMessage(),
+                    'error_code'     => $e->errorCode ?? 'FORBIDDEN',
                     'correlation_id' => $e->correlationId ?? $request->header('X-Correlation-Id', ''),
-                ], 401);
+                ], 403);
             }
 
-            return redirect()->route('login')->with('error', $message);
+            abort(403, 'Forbidden');
         }
     }
 }
