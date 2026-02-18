@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Contracts\AdminAuthServiceInterface;
 use App\Services\Contracts\UserManagementServiceInterface;
 use App\Services\Exceptions\ExternalServiceException;
+use App\Services\Exceptions\UnauthorizedRemoteException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,8 @@ class UserPreferencesController extends Controller
         try {
             $user  = $this->userService->getUser($this->auth->getToken(), $uuid);
             $prefs = $this->userService->getPreferences($this->auth->getToken(), $uuid);
+        } catch (UnauthorizedRemoteException $e) {
+            throw $e;
         } catch (ExternalServiceException) {
             return redirect()->route('users.index')->with('error', 'Failed to load preferences.');
         }
@@ -57,6 +60,8 @@ class UserPreferencesController extends Controller
             }
 
             return redirect()->route('users.preferences', $uuid)->with('success', 'Preferences updated.');
+        } catch (UnauthorizedRemoteException $e) {
+            throw $e;
         } catch (ExternalServiceException $e) {
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->context], 422);

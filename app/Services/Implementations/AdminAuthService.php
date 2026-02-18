@@ -5,6 +5,7 @@ namespace App\Services\Implementations;
 use App\Services\Contracts\AdminAuthServiceInterface;
 use App\Services\Contracts\UserServiceClientInterface;
 use App\Services\Exceptions\ExternalServiceException;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 
@@ -30,6 +31,7 @@ class AdminAuthService implements AdminAuthServiceInterface
      */
     private const SESSION_TOKEN_KEY = 'admin_jwt_token';
     private const SESSION_ADMIN_KEY = 'admin_profile';
+    private const SESSION_EXPIRES_AT_KEY = 'admin_jwt_expires_at';
 
     public function __construct(
         private readonly UserServiceClientInterface $client,
@@ -54,6 +56,10 @@ class AdminAuthService implements AdminAuthServiceInterface
             // Step 4 — Persist in session.
             Session::put(self::SESSION_TOKEN_KEY, $token);
             Session::put(self::SESSION_ADMIN_KEY, $profile);
+            Session::put(
+                self::SESSION_EXPIRES_AT_KEY,
+                CarbonImmutable::now()->addSeconds((int) ($tokenData['expires_in'] ?? 0))->toIso8601String(),
+            );
             Session::regenerate(); // prevent session fixation attacks
 
             Log::info('admin.login_success', [
@@ -80,14 +86,18 @@ class AdminAuthService implements AdminAuthServiceInterface
 
         Session::forget(self::SESSION_TOKEN_KEY);
         Session::forget(self::SESSION_ADMIN_KEY);
+        Session::forget(self::SESSION_EXPIRES_AT_KEY);
         Session::invalidate();
         Session::regenerateToken();
     }
 
     public function isAuthenticated(): bool
     {
-        return Session::has(self::SESSION_TOKEN_KEY)
-            && Session::has(self::SESSION_ADMIN_KEY);
+        if (! Session::has(self::SESSION_TOKEN_KEY) || ! Session::has(self::SESSION_ADMIN_KEY)) {
+            return false;
+        }
+
+        return ! $this->isTokenExpired();
     }
 
     public function isSuperAdmin(): bool
@@ -117,6 +127,20 @@ class AdminAuthService implements AdminAuthServiceInterface
     public function getToken(): ?string
     {
         return Session::get(self::SESSION_TOKEN_KEY);
+    }
+
+    public function getTokenExpiresAt(): ?CarbonImmutable
+    {
+        $raw = Session::get(self::SESSION_EXPIRES_AT_KEY);
+
+        return $raw ? CarbonImmutable::parse($raw) : null;
+    }
+
+    public function isTokenExpired(): bool
+    {
+        $expiresAt = $this->getTokenExpiresAt();
+
+        return $expiresAt !== null && $expiresAt->lessThanOrEqualTo(CarbonImmutable::now());
     }
 
     // ── Private helpers ─────────────────────────────────────────────────

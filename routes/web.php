@@ -27,7 +27,7 @@ Route::middleware('guest')->group(function () {
 });
 
 // ── Authenticated routes ────────────────────────────────────────────────
-Route::middleware('admin.auth')->group(function () {
+Route::middleware(['admin.auth', 'remote.unauthorized'])->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Contracts\AdminAuthServiceInterface;
 use App\Services\Contracts\AdminManagementServiceInterface;
 use App\Services\Exceptions\ExternalServiceException;
+use App\Services\Exceptions\UnauthorizedRemoteException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,6 +27,8 @@ class AdminController extends Controller
             $result     = $this->adminService->listAdmins($this->auth->getToken(), $page);
             $admins     = $result['data'];
             $pagination = $result['pagination'];
+        } catch (UnauthorizedRemoteException $e) {
+            throw $e;
         } catch (ExternalServiceException) {
             $admins     = [];
             $pagination = null;
@@ -67,6 +70,8 @@ class AdminController extends Controller
             }
 
             return redirect()->route('admins.index')->with('success', 'Admin created successfully.');
+        } catch (UnauthorizedRemoteException $e) {
+            throw $e;
         } catch (ExternalServiceException $e) {
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->context], 422);
@@ -82,6 +87,8 @@ class AdminController extends Controller
     {
         try {
             $admin = $this->adminService->findAdmin($this->auth->getToken(), $uuid);
+        } catch (UnauthorizedRemoteException $e) {
+            throw $e;
         } catch (ExternalServiceException) {
             return redirect()->route('admins.index')->with('error', 'Failed to load admin details.');
         }
@@ -115,6 +122,8 @@ class AdminController extends Controller
             }
 
             return redirect()->route('admins.index')->with('success', 'Admin updated successfully.');
+        } catch (UnauthorizedRemoteException $e) {
+            throw $e;
         } catch (ExternalServiceException $e) {
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->context], 422);
@@ -136,6 +145,8 @@ class AdminController extends Controller
             }
 
             return redirect()->route('admins.index')->with('success', 'Admin deleted successfully.');
+        } catch (UnauthorizedRemoteException $e) {
+            throw $e;
         } catch (ExternalServiceException $e) {
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -156,6 +167,8 @@ class AdminController extends Controller
             }
 
             return redirect()->route('admins.index')->with('success', "Admin {$status} successfully.");
+        } catch (UnauthorizedRemoteException $e) {
+            throw $e;
         } catch (ExternalServiceException $e) {
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => 'Failed to toggle admin status.'], 500);
