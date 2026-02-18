@@ -39,14 +39,22 @@ class UserServiceClient implements UserServiceClientInterface
 
     public function login(string $email, string $password): array
     {
-        $response = $this->request()->post('admin/auth/login', compact('email', 'password'));
+        $response = $this->timedRequest(
+            fn () => $this->request()->post('admin/auth/login', compact('email', 'password')),
+            'admin/auth/login',
+            'POST',
+        );
 
         return $this->extractData($response, 'Login failed');
     }
 
     public function me(string $token): array
     {
-        $response = $this->authenticatedRequest($token)->get('admin/me');
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->get('admin/me'),
+            'admin/me',
+            'GET',
+        );
 
         return $this->extractData($response, 'Failed to fetch profile');
     }
@@ -55,8 +63,11 @@ class UserServiceClient implements UserServiceClientInterface
 
     public function listAdmins(string $token, int $page = 1, int $perPage = 15): array
     {
-        $response = $this->authenticatedRequest($token)
-            ->get('admins', ['page' => $page, 'per_page' => $perPage]);
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->get('admins', ['page' => $page, 'per_page' => $perPage]),
+            'admins',
+            'GET',
+        );
 
         $this->throwIfUnauthorized($response);
 
@@ -74,7 +85,11 @@ class UserServiceClient implements UserServiceClientInterface
 
     public function findAdmin(string $token, string $uuid): ?array
     {
-        $response = $this->authenticatedRequest($token)->get("admins/{$uuid}");
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->get("admins/{$uuid}"),
+            "admins/{$uuid}",
+            'GET',
+        );
 
         $this->throwIfUnauthorized($response);
 
@@ -87,21 +102,33 @@ class UserServiceClient implements UserServiceClientInterface
 
     public function createAdmin(string $token, array $data): array
     {
-        $response = $this->authenticatedRequest($token)->post('admins', $data);
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->post('admins', $data),
+            'admins',
+            'POST',
+        );
 
         return $this->extractDataOrThrowWithErrors($response, 'Failed to create admin');
     }
 
     public function updateAdmin(string $token, string $uuid, array $data): array
     {
-        $response = $this->authenticatedRequest($token)->put("admins/{$uuid}", $data);
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->put("admins/{$uuid}", $data),
+            "admins/{$uuid}",
+            'PUT',
+        );
 
         return $this->extractDataOrThrowWithErrors($response, 'Failed to update admin');
     }
 
     public function deleteAdmin(string $token, string $uuid): bool
     {
-        $response = $this->authenticatedRequest($token)->delete("admins/{$uuid}");
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->delete("admins/{$uuid}"),
+            "admins/{$uuid}",
+            'DELETE',
+        );
 
         $this->throwIfUnauthorized($response);
 
@@ -119,7 +146,11 @@ class UserServiceClient implements UserServiceClientInterface
 
     public function listUsers(string $token, array $query = []): array
     {
-        $response = $this->authenticatedRequest($token)->get('users', $query);
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->get('users', $query),
+            'users',
+            'GET',
+        );
 
         $this->throwIfUnauthorized($response);
 
@@ -137,7 +168,11 @@ class UserServiceClient implements UserServiceClientInterface
 
     public function findUser(string $token, string $uuid): ?array
     {
-        $response = $this->authenticatedRequest($token)->get("users/{$uuid}");
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->get("users/{$uuid}"),
+            "users/{$uuid}",
+            'GET',
+        );
 
         $this->throwIfUnauthorized($response);
 
@@ -150,21 +185,33 @@ class UserServiceClient implements UserServiceClientInterface
 
     public function createUser(string $token, array $data): array
     {
-        $response = $this->authenticatedRequest($token)->post('users', $data);
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->post('users', $data),
+            'users',
+            'POST',
+        );
 
         return $this->extractDataOrThrowWithErrors($response, 'Failed to create user');
     }
 
     public function updateUser(string $token, string $uuid, array $data): array
     {
-        $response = $this->authenticatedRequest($token)->put("users/{$uuid}", $data);
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->put("users/{$uuid}", $data),
+            "users/{$uuid}",
+            'PUT',
+        );
 
         return $this->extractDataOrThrowWithErrors($response, 'Failed to update user');
     }
 
     public function deleteUser(string $token, string $uuid): bool
     {
-        $response = $this->authenticatedRequest($token)->delete("users/{$uuid}");
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->delete("users/{$uuid}"),
+            "users/{$uuid}",
+            'DELETE',
+        );
 
         $this->throwIfUnauthorized($response);
 
@@ -175,14 +222,22 @@ class UserServiceClient implements UserServiceClientInterface
 
     public function getUserPreferences(string $token, string $uuid): array
     {
-        $response = $this->authenticatedRequest($token)->get("users/{$uuid}/preferences");
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->get("users/{$uuid}/preferences"),
+            "users/{$uuid}/preferences",
+            'GET',
+        );
 
         return $this->extractData($response, 'Failed to fetch preferences');
     }
 
     public function updateUserPreferences(string $token, string $uuid, array $data): array
     {
-        $response = $this->authenticatedRequest($token)->put("users/{$uuid}/preferences", $data);
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->put("users/{$uuid}/preferences", $data),
+            "users/{$uuid}/preferences",
+            'PUT',
+        );
 
         return $this->extractDataOrThrowWithErrors($response, 'Failed to update preferences');
     }
@@ -191,21 +246,33 @@ class UserServiceClient implements UserServiceClientInterface
 
     public function listUserDevices(string $token, string $uuid): array
     {
-        $response = $this->authenticatedRequest($token)->get("users/{$uuid}/devices");
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->get("users/{$uuid}/devices"),
+            "users/{$uuid}/devices",
+            'GET',
+        );
 
         return $this->extractData($response, 'Failed to fetch devices');
     }
 
     public function addUserDevice(string $token, string $uuid, array $data): array
     {
-        $response = $this->authenticatedRequest($token)->post("users/{$uuid}/devices", $data);
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->post("users/{$uuid}/devices", $data),
+            "users/{$uuid}/devices",
+            'POST',
+        );
 
         return $this->extractDataOrThrowWithErrors($response, 'Failed to add device');
     }
 
     public function deleteUserDevice(string $token, string $userUuid, string $deviceUuid): bool
     {
-        $response = $this->authenticatedRequest($token)->delete("users/{$userUuid}/devices/{$deviceUuid}");
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->delete("users/{$userUuid}/devices/{$deviceUuid}"),
+            "users/{$userUuid}/devices/{$deviceUuid}",
+            'DELETE',
+        );
 
         $this->throwIfUnauthorized($response);
 
@@ -303,5 +370,29 @@ class UserServiceClient implements UserServiceClientInterface
                 $json['errors'] ?? [],
             );
         }
+    }
+
+    /**
+     * Measure outbound HTTP latency and emit a structured log entry.
+     *
+     * @param callable(): Response $callback
+     */
+    private function timedRequest(callable $callback, string $endpoint, string $method): Response
+    {
+        $started = microtime(true);
+        $response = $callback();
+
+        $latencyMs = (microtime(true) - $started) * 1000;
+
+        Log::info('http.outbound.user_service', [
+            'service'        => env('SERVICE_NAME', config('app.name', 'admin-dashboard')),
+            'endpoint'       => $endpoint,
+            'method'         => $method,
+            'status_code'    => $response->status(),
+            'latency_ms'     => round($latencyMs, 2),
+            'correlation_id' => request()->header('X-Correlation-Id', ''),
+        ]);
+
+        return $response;
     }
 }

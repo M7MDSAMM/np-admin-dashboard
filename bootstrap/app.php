@@ -4,6 +4,7 @@ use App\Http\Middleware\CorrelationIdMiddleware;
 use App\Http\Middleware\HandleUnauthorizedRemoteMiddleware;
 use App\Http\Middleware\RequireAdminSessionMiddleware;
 use App\Http\Middleware\RequireSuperAdminMiddleware;
+use App\Http\Middleware\RequestTimingMiddleware;
 use App\Services\Contracts\AdminAuthServiceInterface;
 use App\Services\Exceptions\UnauthorizedRemoteException;
 use Illuminate\Foundation\Application;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Runs on EVERY request — assigns/forwards a correlation ID for
         // distributed tracing across microservices.
         $middleware->append(CorrelationIdMiddleware::class);
+        $middleware->append(RequestTimingMiddleware::class);
         $middleware->appendToGroup('web', HandleUnauthorizedRemoteMiddleware::class);
 
         // Route-level middleware aliases used in routes/web.php:
