@@ -47,6 +47,19 @@ Route::middleware(['admin.auth', 'remote.unauthorized'])->group(function () {
         Route::patch('/{uuid}/toggle-active', [AdminController::class, 'toggleActive'])->name('admins.toggle-active');
     });
 
+    // Templates (super admin only)
+    Route::prefix('templates')->middleware('admin.super')->group(function () {
+        Route::get('/', [\App\Http\Controllers\TemplatesController::class, 'index'])->name('templates.index');
+        Route::get('/create', [\App\Http\Controllers\TemplatesController::class, 'create'])->name('templates.create');
+        Route::post('/', [\App\Http\Controllers\TemplatesController::class, 'store'])->name('templates.store');
+        Route::get('/{key}', [\App\Http\Controllers\TemplatesController::class, 'show'])->name('templates.show');
+        Route::get('/{key}/edit', [\App\Http\Controllers\TemplatesController::class, 'edit'])->name('templates.edit');
+        Route::put('/{key}', [\App\Http\Controllers\TemplatesController::class, 'update'])->name('templates.update');
+        Route::delete('/{key}', [\App\Http\Controllers\TemplatesController::class, 'destroy'])->name('templates.destroy');
+        Route::get('/{key}/render-preview', [\App\Http\Controllers\TemplatesController::class, 'renderPreview'])->name('templates.render-preview');
+        Route::post('/{key}/render-preview', [\App\Http\Controllers\TemplatesController::class, 'renderPreviewSubmit'])->name('templates.render-preview.submit');
+    });
+
     // Recipient User Management (any admin)
     Route::prefix('users')->group(function () {
         Route::get('/', [UsersController::class, 'index'])->name('users.index');
