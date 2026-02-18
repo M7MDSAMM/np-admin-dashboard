@@ -23,6 +23,8 @@ class ExternalServiceException extends RuntimeException
         string $message,
         public readonly int $statusCode = 502,
         public readonly array $context = [],
+        public readonly ?string $errorCode = null,
+        public readonly ?string $correlationId = null,
         ?\Throwable $previous = null,
     ) {
         parent::__construct($message, $statusCode, $previous);
