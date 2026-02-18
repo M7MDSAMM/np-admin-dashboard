@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Contracts\AdminAuthServiceInterface;
 use App\Services\Contracts\UserManagementServiceInterface;
 use App\Services\Exceptions\ExternalServiceException;
+use App\Services\Exceptions\UnauthorizedRemoteException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,6 +31,8 @@ class UsersController extends Controller
             $result     = $this->userService->paginateUsers($this->auth->getToken(), $query);
             $users      = $result['data'];
             $pagination = $result['pagination'];
+        } catch (UnauthorizedRemoteException $e) {
+            throw $e;
         } catch (ExternalServiceException) {
             $users      = [];
             $pagination = null;
@@ -45,6 +48,8 @@ class UsersController extends Controller
     {
         try {
             $user = $this->userService->getUser($this->auth->getToken(), $uuid);
+        } catch (UnauthorizedRemoteException $e) {
+            throw $e;
         } catch (ExternalServiceException) {
             return redirect()->route('users.index')->with('error', 'Failed to load user.');
         }
@@ -80,6 +85,8 @@ class UsersController extends Controller
             }
 
             return redirect()->route('users.index')->with('success', 'User created successfully.');
+        } catch (UnauthorizedRemoteException $e) {
+            throw $e;
         } catch (ExternalServiceException $e) {
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->context], 422);
@@ -93,6 +100,8 @@ class UsersController extends Controller
     {
         try {
             $user = $this->userService->getUser($this->auth->getToken(), $uuid);
+        } catch (UnauthorizedRemoteException $e) {
+            throw $e;
         } catch (ExternalServiceException) {
             return redirect()->route('users.index')->with('error', 'Failed to load user.');
         }
@@ -123,6 +132,8 @@ class UsersController extends Controller
             }
 
             return redirect()->route('users.index')->with('success', 'User updated successfully.');
+        } catch (UnauthorizedRemoteException $e) {
+            throw $e;
         } catch (ExternalServiceException $e) {
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->context], 422);
@@ -142,6 +153,8 @@ class UsersController extends Controller
             }
 
             return redirect()->route('users.index')->with('success', 'User deleted successfully.');
+        } catch (UnauthorizedRemoteException $e) {
+            throw $e;
         } catch (ExternalServiceException $e) {
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

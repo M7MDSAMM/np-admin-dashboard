@@ -35,4 +35,10 @@ interface AdminAuthServiceInterface
 
     /** Retrieve the stored JWT access token, or null if not logged in. */
     public function getToken(): ?string;
+
+    /** Retrieve the JWT expiry timestamp if stored. */
+    public function getTokenExpiresAt(): ?\Carbon\CarbonImmutable;
+
+    /** Whether the stored JWT has expired. */
+    public function isTokenExpired(): bool;
 }

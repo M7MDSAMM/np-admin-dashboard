@@ -4,6 +4,7 @@ namespace App\Services\Implementations;
 
 use App\Services\Contracts\UserServiceClientInterface;
 use App\Services\Exceptions\ExternalServiceException;
+use App\Services\Exceptions\UnauthorizedRemoteException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -57,6 +58,8 @@ class UserServiceClient implements UserServiceClientInterface
         $response = $this->authenticatedRequest($token)
             ->get('admins', ['page' => $page, 'per_page' => $perPage]);
 
+        $this->throwIfUnauthorized($response);
+
         $json = $response->json();
 
         if ($response->successful() && ($json['success'] ?? false)) {
@@ -72,6 +75,8 @@ class UserServiceClient implements UserServiceClientInterface
     public function findAdmin(string $token, string $uuid): ?array
     {
         $response = $this->authenticatedRequest($token)->get("admins/{$uuid}");
+
+        $this->throwIfUnauthorized($response);
 
         if ($response->status() === 404) {
             return null;
@@ -98,6 +103,8 @@ class UserServiceClient implements UserServiceClientInterface
     {
         $response = $this->authenticatedRequest($token)->delete("admins/{$uuid}");
 
+        $this->throwIfUnauthorized($response);
+
         return $response->successful();
     }
 
@@ -114,6 +121,8 @@ class UserServiceClient implements UserServiceClientInterface
     {
         $response = $this->authenticatedRequest($token)->get('users', $query);
 
+        $this->throwIfUnauthorized($response);
+
         $json = $response->json();
 
         if ($response->successful() && ($json['success'] ?? false)) {
@@ -129,6 +138,8 @@ class UserServiceClient implements UserServiceClientInterface
     public function findUser(string $token, string $uuid): ?array
     {
         $response = $this->authenticatedRequest($token)->get("users/{$uuid}");
+
+        $this->throwIfUnauthorized($response);
 
         if ($response->status() === 404) {
             return null;
@@ -154,6 +165,8 @@ class UserServiceClient implements UserServiceClientInterface
     public function deleteUser(string $token, string $uuid): bool
     {
         $response = $this->authenticatedRequest($token)->delete("users/{$uuid}");
+
+        $this->throwIfUnauthorized($response);
 
         return $response->successful();
     }
@@ -193,6 +206,8 @@ class UserServiceClient implements UserServiceClientInterface
     public function deleteUserDevice(string $token, string $userUuid, string $deviceUuid): bool
     {
         $response = $this->authenticatedRequest($token)->delete("users/{$userUuid}/devices/{$deviceUuid}");
+
+        $this->throwIfUnauthorized($response);
 
         return $response->successful();
     }
@@ -237,6 +252,8 @@ class UserServiceClient implements UserServiceClientInterface
      */
     private function extractData(Response $response, string $fallbackMessage): array
     {
+        $this->throwIfUnauthorized($response);
+
         $json = $response->json();
 
         if ($response->successful() && ($json['success'] ?? false)) {
@@ -255,6 +272,8 @@ class UserServiceClient implements UserServiceClientInterface
      */
     private function extractDataOrThrowWithErrors(Response $response, string $fallbackMessage): array
     {
+        $this->throwIfUnauthorized($response);
+
         $json = $response->json();
 
         if ($response->successful() && ($json['success'] ?? false)) {
@@ -266,5 +285,23 @@ class UserServiceClient implements UserServiceClientInterface
             $response->status(),
             $json['errors'] ?? [],
         );
+    }
+
+    /**
+     * Throws UnauthorizedRemoteException when the response status is 401 or 403.
+     */
+    private function throwIfUnauthorized(Response $response): void
+    {
+        if (in_array($response->status(), [401, 403], true)) {
+            $json = $response->json() ?? [];
+
+            throw new UnauthorizedRemoteException(
+                $json['message'] ?? 'Unauthorized',
+                $response->status(),
+                $json['error_code'] ?? null,
+                $json['correlation_id'] ?? $response->header('X-Correlation-Id', ''),
+                $json['errors'] ?? [],
+            );
+        }
     }
 }

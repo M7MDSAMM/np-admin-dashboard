@@ -20,6 +20,7 @@ class RouteProtectionTest extends TestCase
     {
         $mock = Mockery::mock(AdminAuthServiceInterface::class);
         $mock->shouldReceive('isAuthenticated')->andReturn($authenticated);
+        $mock->shouldReceive('isTokenExpired')->andReturn(false);
         $mock->shouldReceive('isSuperAdmin')->andReturn($superAdmin);
         $mock->shouldReceive('getAdmin')->andReturn($admin ?: null);
         $mock->shouldReceive('getToken')->andReturn($authenticated ? 'test-token' : null);
