@@ -40,7 +40,7 @@ class UserServiceClient implements UserServiceClientInterface
     public function login(string $email, string $password): array
     {
         $response = $this->timedRequest(
-            fn () => $this->request()->post('admin/auth/login', compact('email', 'password')),
+            fn () => $this->request()->post('admin/auth/login', ['email' => $email, 'password' => $password]),
             'admin/auth/login',
             'POST',
         );
@@ -213,9 +213,9 @@ class UserServiceClient implements UserServiceClientInterface
             'DELETE',
         );
 
-        $this->throwIfUnauthorized($response);
+        $this->ensureSuccess($response, 'Failed to delete user');
 
-        return $response->successful();
+        return true;
     }
 
     // ── User Preferences ────────────────────────────────────────────────
@@ -274,9 +274,9 @@ class UserServiceClient implements UserServiceClientInterface
             'DELETE',
         );
 
-        $this->throwIfUnauthorized($response);
+        $this->ensureSuccess($response, 'Failed to delete device');
 
-        return $response->successful();
+        return true;
     }
 
     // ── Private helpers ─────────────────────────────────────────────────
@@ -319,18 +319,13 @@ class UserServiceClient implements UserServiceClientInterface
      */
     private function extractData(Response $response, string $fallbackMessage): array
     {
-        $this->throwIfUnauthorized($response);
-
         $json = $response->json();
 
-        if ($response->successful() && ($json['success'] ?? false)) {
+        if (($json['success'] ?? false) === true) {
             return $json['data'] ?? [];
         }
 
-        throw new ExternalServiceException(
-            $json['message'] ?? $fallbackMessage,
-            $response->status(),
-        );
+        $this->throwServiceException($response, $json, $fallbackMessage);
     }
 
     /**
@@ -339,19 +334,13 @@ class UserServiceClient implements UserServiceClientInterface
      */
     private function extractDataOrThrowWithErrors(Response $response, string $fallbackMessage): array
     {
-        $this->throwIfUnauthorized($response);
-
         $json = $response->json();
 
-        if ($response->successful() && ($json['success'] ?? false)) {
+        if (($json['success'] ?? false) === true) {
             return $json['data'] ?? [];
         }
 
-        throw new ExternalServiceException(
-            $json['message'] ?? $fallbackMessage,
-            $response->status(),
-            $json['errors'] ?? [],
-        );
+        $this->throwServiceException($response, $json, $fallbackMessage);
     }
 
     /**
@@ -394,5 +383,31 @@ class UserServiceClient implements UserServiceClientInterface
         ]);
 
         return $response;
+    }
+
+    private function ensureSuccess(Response $response, string $fallbackMessage): void
+    {
+        $json = $response->json() ?? [];
+
+        if (($json['success'] ?? false) === true) {
+            return;
+        }
+
+        $this->throwServiceException($response, $json, $fallbackMessage);
+    }
+
+    private function throwServiceException(Response $response, array $json, string $fallbackMessage): never
+    {
+        if (in_array($response->status(), [401, 403], true)) {
+            $this->throwIfUnauthorized($response);
+        }
+
+        throw new ExternalServiceException(
+            $json['message'] ?? $fallbackMessage,
+            $response->status(),
+            $json['errors'] ?? [],
+            $json['error_code'] ?? null,
+            $json['correlation_id'] ?? $response->header('X-Correlation-Id', '')
+        );
     }
 }

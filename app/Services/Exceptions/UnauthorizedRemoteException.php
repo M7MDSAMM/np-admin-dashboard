@@ -13,10 +13,10 @@ class UnauthorizedRemoteException extends ExternalServiceException
     public function __construct(
         string $message = 'Unauthorized',
         int $statusCode = 401,
-        public readonly ?string $errorCode = null,
-        public readonly ?string $correlationId = null,
+        ?string $errorCode = null,
+        ?string $correlationId = null,
         array $context = [],
     ) {
-        parent::__construct($message, $statusCode, $context);
+        parent::__construct($message, $statusCode, $context, $errorCode, $correlationId);
     }
 }
