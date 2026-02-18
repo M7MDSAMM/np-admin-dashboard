@@ -40,7 +40,7 @@ class UserServiceClient implements UserServiceClientInterface
     public function login(string $email, string $password): array
     {
         $response = $this->timedRequest(
-            fn () => $this->request()->post('admin/auth/login', ['email' => $email, 'password' => $password]),
+            fn () => $this->request()->post('admin/auth/login', data: ['email' => $email, 'password' => $password]),
             'admin/auth/login',
             'POST',
         );
