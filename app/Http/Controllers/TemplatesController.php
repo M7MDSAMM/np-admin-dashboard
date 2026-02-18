@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Contracts\AdminAuthServiceInterface;
 use App\Services\Contracts\TemplateManagementServiceInterface;
 use App\Services\Exceptions\ExternalServiceException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -89,10 +90,14 @@ class TemplatesController extends Controller
         }
     }
 
-    public function destroy(string $key): RedirectResponse
+    public function destroy(Request $request, string $key): JsonResponse|RedirectResponse
     {
         $token = $this->auth->getToken();
         $this->templates->deleteTemplate($token, $key);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Template deleted successfully.']);
+        }
 
         return redirect()->route('templates.index')->with('success', 'Template deleted.');
     }
@@ -105,16 +110,18 @@ class TemplatesController extends Controller
         return view('templates.render', [
             'template' => $template,
             'result'   => null,
-            'input'    => '',
+            'input'    => $this->buildExampleJson($template),
             'currentAdmin' => $this->auth->getAdmin(),
         ]);
     }
 
-    public function renderPreviewSubmit(Request $request, string $key): View
+    public function renderPreviewSubmit(Request $request, string $key): View|RedirectResponse
     {
         $token = $this->auth->getToken();
         $template = $this->templates->getTemplate($token, $key);
-        $input = $request->input('variables_json', '{}');
+
+        // Treat an empty/blank submission as an empty object rather than an error.
+        $input = trim($request->input('variables_json', '')) ?: '{}';
 
         try {
             $variables = $this->decodeJson($input);
@@ -129,7 +136,7 @@ class TemplatesController extends Controller
                 'result'   => $result,
                 'input'    => $input,
                 'currentAdmin' => $this->auth->getAdmin(),
-            ])->with('success', $result['message'] ?? 'Rendered');
+            ])->with('success', $result['message'] ?? 'Rendered successfully.');
         } catch (ExternalServiceException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
@@ -169,5 +176,24 @@ class TemplatesController extends Controller
         }
 
         return $decoded;
+    }
+
+    /**
+     * Build a starter JSON object from the template's variables_schema so the
+     * render textarea comes pre-filled with the correct keys.
+     */
+    private function buildExampleJson(array $template): string
+    {
+        $schema = $template['variables_schema'] ?? [];
+        $example = [];
+
+        foreach ($schema['required'] ?? [] as $var) {
+            $example[$var] = '';
+        }
+        foreach ($schema['optional'] ?? [] as $var) {
+            $example[$var] = '';
+        }
+
+        return json_encode($example ?: new \stdClass(), JSON_PRETTY_PRINT);
     }
 }
