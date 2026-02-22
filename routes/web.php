@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\UserDevicesController;
 use App\Http\Controllers\UserPreferencesController;
 use App\Http\Controllers\UsersController;
@@ -76,5 +77,14 @@ Route::middleware(['admin.auth', 'remote.unauthorized'])->group(function () {
         Route::get('/{uuid}/devices', [UserDevicesController::class, 'index'])->name('users.devices');
         Route::post('/{uuid}/devices', [UserDevicesController::class, 'store'])->name('users.devices.store');
         Route::delete('/{uuid}/devices/{deviceUuid}', [UserDevicesController::class, 'destroy'])->name('users.devices.destroy');
+    });
+
+    // Notifications (any admin)
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationsController::class, 'index'])->name('notifications.index');
+        Route::get('/create', [NotificationsController::class, 'create'])->name('notifications.create');
+        Route::post('/', [NotificationsController::class, 'store'])->name('notifications.store');
+        Route::get('/{uuid}', [NotificationsController::class, 'show'])->name('notifications.show');
+        Route::post('/{uuid}/retry', [NotificationsController::class, 'retry'])->name('notifications.retry');
     });
 });
