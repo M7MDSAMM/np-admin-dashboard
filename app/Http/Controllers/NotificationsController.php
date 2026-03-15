@@ -7,6 +7,7 @@ use App\Services\Contracts\AdminAuthServiceInterface;
 use App\Services\Contracts\NotificationManagementServiceInterface;
 use App\Services\Exceptions\ExternalServiceException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class NotificationsController extends Controller
@@ -16,12 +17,36 @@ class NotificationsController extends Controller
         private readonly AdminAuthServiceInterface $auth,
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View|RedirectResponse
     {
-        return view('notifications.index', [
-            'lastNotification' => session('last_notification'),
-            'currentAdmin'     => $this->auth->getAdmin(),
-        ]);
+        try {
+            $filters = $request->only(['status', 'user_uuid', 'template_key']);
+            $page = (int) $request->query('page', 1);
+
+            $result = $this->notifications->listNotifications($filters, $page);
+            $data = $result['data'] ?? [];
+
+            return view('notifications.index', [
+                'notifications' => $data['data'] ?? [],
+                'pagination'    => [
+                    'current_page' => $data['current_page'] ?? 1,
+                    'last_page'    => $data['last_page'] ?? 1,
+                    'from'         => $data['from'] ?? 0,
+                    'to'           => $data['to'] ?? 0,
+                    'total'        => $data['total'] ?? 0,
+                ],
+                'filters'      => $filters,
+                'currentAdmin' => $this->auth->getAdmin(),
+            ]);
+        } catch (ExternalServiceException $e) {
+            return view('notifications.index', [
+                'notifications' => [],
+                'pagination'    => null,
+                'filters'       => $request->only(['status', 'user_uuid', 'template_key']),
+                'currentAdmin'  => $this->auth->getAdmin(),
+                'error'         => $e->getMessage(),
+            ]);
+        }
     }
 
     public function create(): View
@@ -59,9 +84,9 @@ class NotificationsController extends Controller
             $notification = $result['data'] ?? [];
 
             return view('notifications.show', [
-                'notification'   => $notification,
-                'correlationId'  => $result['correlation_id'] ?? null,
-                'currentAdmin'   => $this->auth->getAdmin(),
+                'notification'  => $notification,
+                'correlationId' => $result['correlation_id'] ?? null,
+                'currentAdmin'  => $this->auth->getAdmin(),
             ]);
         } catch (ExternalServiceException $e) {
             return redirect()
@@ -83,6 +108,42 @@ class NotificationsController extends Controller
         } catch (ExternalServiceException $e) {
             return redirect()
                 ->route('notifications.show', $uuid)
+                ->with('error', $e->getMessage())
+                ->with('error_code', $e->errorCode);
+        }
+    }
+
+    public function showDelivery(string $uuid): View|RedirectResponse
+    {
+        try {
+            $result = $this->notifications->getDelivery($uuid);
+            $delivery = $result['data'] ?? [];
+
+            return view('notifications.delivery', [
+                'delivery'      => $delivery,
+                'correlationId' => $result['correlation_id'] ?? null,
+                'currentAdmin'  => $this->auth->getAdmin(),
+            ]);
+        } catch (ExternalServiceException $e) {
+            return redirect()
+                ->route('notifications.index')
+                ->with('error', $e->getMessage())
+                ->with('error_code', $e->errorCode);
+        }
+    }
+
+    public function retryDelivery(string $uuid): RedirectResponse
+    {
+        try {
+            $result = $this->notifications->retryDelivery($uuid);
+
+            return redirect()
+                ->route('notifications.delivery', $uuid)
+                ->with('success', $result['message'] ?? 'Delivery retry accepted.')
+                ->with('correlation_id', $result['correlation_id'] ?? null);
+        } catch (ExternalServiceException $e) {
+            return redirect()
+                ->route('notifications.delivery', $uuid)
                 ->with('error', $e->getMessage())
                 ->with('error_code', $e->errorCode);
         }

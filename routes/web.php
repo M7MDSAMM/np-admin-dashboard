@@ -87,4 +87,10 @@ Route::middleware(['admin.auth', 'remote.unauthorized'])->group(function () {
         Route::get('/{uuid}', [NotificationsController::class, 'show'])->name('notifications.show');
         Route::post('/{uuid}/retry', [NotificationsController::class, 'retry'])->name('notifications.retry');
     });
+
+    // Deliveries (any admin)
+    Route::prefix('deliveries')->group(function () {
+        Route::get('/{uuid}', [NotificationsController::class, 'showDelivery'])->name('notifications.delivery');
+        Route::post('/{uuid}/retry', [NotificationsController::class, 'retryDelivery'])->name('notifications.delivery.retry');
+    });
 });

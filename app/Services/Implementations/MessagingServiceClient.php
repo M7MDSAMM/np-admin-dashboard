@@ -3,7 +3,7 @@
 namespace App\Services\Implementations;
 
 use App\Services\Contracts\AdminAuthServiceInterface;
-use App\Services\Contracts\NotificationServiceClientInterface;
+use App\Services\Contracts\MessagingServiceClientInterface;
 use App\Services\Exceptions\ExternalServiceException;
 use App\Services\Exceptions\UnauthorizedRemoteException;
 use Illuminate\Http\Client\PendingRequest;
@@ -11,63 +11,36 @@ use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class NotificationServiceClient implements NotificationServiceClientInterface
+class MessagingServiceClient implements MessagingServiceClientInterface
 {
     private string $baseUrl;
 
     public function __construct(
         private readonly AdminAuthServiceInterface $auth,
     ) {
-        $this->baseUrl = rtrim(config('services.notification_service.base_url'), '/').'/';
+        $this->baseUrl = rtrim(config('services.messaging_service.base_url'), '/').'/';
     }
 
-    public function listNotifications(array $filters = [], int $page = 1, int $perPage = 15): array
+    public function getDelivery(string $uuid): array
     {
-        $query = array_filter(array_merge($filters, [
-            'page'     => $page,
-            'per_page' => $perPage,
-        ]));
-
         $response = $this->timedRequest(
-            fn () => $this->authenticatedRequest()->get('notifications', $query),
-            'notifications',
+            fn () => $this->authenticatedRequest()->get("deliveries/{$uuid}"),
+            "deliveries/{$uuid}",
             'GET',
         );
 
-        return $this->extractPayload($response, 'Failed to list notifications');
+        return $this->extractPayload($response, 'Failed to fetch delivery');
     }
 
-    public function createNotification(array $payload): array
+    public function retryDelivery(string $uuid): array
     {
         $response = $this->timedRequest(
-            fn () => $this->authenticatedRequest()->post('notifications', $payload),
-            'notifications',
+            fn () => $this->authenticatedRequest()->post("deliveries/{$uuid}/retry"),
+            "deliveries/{$uuid}/retry",
             'POST',
         );
 
-        return $this->extractPayload($response, 'Failed to create notification');
-    }
-
-    public function getNotification(string $uuid): array
-    {
-        $response = $this->timedRequest(
-            fn () => $this->authenticatedRequest()->get("notifications/{$uuid}"),
-            "notifications/{$uuid}",
-            'GET',
-        );
-
-        return $this->extractPayload($response, 'Failed to fetch notification');
-    }
-
-    public function retryNotification(string $uuid): array
-    {
-        $response = $this->timedRequest(
-            fn () => $this->authenticatedRequest()->post("notifications/{$uuid}/retry"),
-            "notifications/{$uuid}/retry",
-            'POST',
-        );
-
-        return $this->extractPayload($response, 'Failed to retry notification');
+        return $this->extractPayload($response, 'Failed to retry delivery');
     }
 
     public function health(): array
@@ -78,7 +51,7 @@ class NotificationServiceClient implements NotificationServiceClientInterface
             'GET',
         );
 
-        return $this->extractPayload($response, 'Notification service health check failed');
+        return $this->extractPayload($response, 'Messaging service health check failed');
     }
 
     // ── Private helpers ─────────────────────────────────────────────────
@@ -151,7 +124,7 @@ class NotificationServiceClient implements NotificationServiceClientInterface
         $response = $callback();
         $latencyMs = (microtime(true) - $started) * 1000;
 
-        Log::info('http.outbound.notification_service', [
+        Log::info('http.outbound.messaging_service', [
             'endpoint'       => $endpoint,
             'method'         => $method,
             'status_code'    => $response->status(),

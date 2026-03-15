@@ -3,6 +3,7 @@
 namespace App\Services\Implementations;
 
 use App\Services\Contracts\AdminAuthServiceInterface;
+use App\Services\Contracts\MessagingServiceClientInterface;
 use App\Services\Contracts\NotificationManagementServiceInterface;
 use App\Services\Contracts\NotificationServiceClientInterface;
 use Illuminate\Support\Facades\Log;
@@ -11,8 +12,23 @@ class NotificationManagementService implements NotificationManagementServiceInte
 {
     public function __construct(
         private readonly NotificationServiceClientInterface $client,
+        private readonly MessagingServiceClientInterface $messagingClient,
         private readonly AdminAuthServiceInterface $auth,
     ) {}
+
+    public function listNotifications(array $filters = [], int $page = 1, int $perPage = 15): array
+    {
+        $result = $this->client->listNotifications($filters, $page, $perPage);
+
+        Log::info('dashboard.notification.list', [
+            'admin_uuid'     => $this->auth->getAdmin()['uuid'] ?? null,
+            'filters'        => $filters,
+            'page'           => $page,
+            'correlation_id' => $result['correlation_id'] ?? request()->header('X-Correlation-Id', ''),
+        ]);
+
+        return $result;
+    }
 
     public function createNotification(array $payload): array
     {
@@ -51,6 +67,32 @@ class NotificationManagementService implements NotificationManagementServiceInte
             'admin_uuid'        => $this->auth->getAdmin()['uuid'] ?? null,
             'notification_uuid' => $uuid,
             'correlation_id'    => $result['correlation_id'] ?? request()->header('X-Correlation-Id', ''),
+        ]);
+
+        return $result;
+    }
+
+    public function getDelivery(string $uuid): array
+    {
+        $result = $this->messagingClient->getDelivery($uuid);
+
+        Log::info('dashboard.delivery.view', [
+            'admin_uuid'     => $this->auth->getAdmin()['uuid'] ?? null,
+            'delivery_uuid'  => $uuid,
+            'correlation_id' => $result['correlation_id'] ?? request()->header('X-Correlation-Id', ''),
+        ]);
+
+        return $result;
+    }
+
+    public function retryDelivery(string $uuid): array
+    {
+        $result = $this->messagingClient->retryDelivery($uuid);
+
+        Log::info('dashboard.delivery.retry', [
+            'admin_uuid'     => $this->auth->getAdmin()['uuid'] ?? null,
+            'delivery_uuid'  => $uuid,
+            'correlation_id' => $result['correlation_id'] ?? request()->header('X-Correlation-Id', ''),
         ]);
 
         return $result;

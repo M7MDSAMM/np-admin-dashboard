@@ -6,6 +6,19 @@ use App\Services\Contracts\NotificationServiceClientInterface;
 
 class FakeNotificationServiceClient implements NotificationServiceClientInterface
 {
+    public array $nextListResponse = [
+        'data' => [
+            'data'         => [],
+            'current_page' => 1,
+            'last_page'    => 1,
+            'from'         => 0,
+            'to'           => 0,
+            'total'        => 0,
+        ],
+        'message'        => 'Notifications retrieved.',
+        'correlation_id' => 'test-corr',
+    ];
+
     public array $nextCreateResponse = [
         'data' => [],
         'message' => 'Notification created.',
@@ -24,9 +37,16 @@ class FakeNotificationServiceClient implements NotificationServiceClientInterfac
         'correlation_id' => 'test-corr',
     ];
 
+    public bool $listCalled = false;
     public bool $retryCalled = false;
     public bool $createCalled = false;
     public bool $getCalled = false;
+
+    public function listNotifications(array $filters = [], int $page = 1, int $perPage = 15): array
+    {
+        $this->listCalled = true;
+        return $this->nextListResponse;
+    }
 
     public function createNotification(array $payload): array
     {

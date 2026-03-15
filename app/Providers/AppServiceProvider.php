@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Auth\NullUserProvider;
 use App\Services\Contracts\AdminAuthServiceInterface;
 use App\Services\Contracts\AdminManagementServiceInterface;
+use App\Services\Contracts\MessagingServiceClientInterface;
 use App\Services\Contracts\NotificationManagementServiceInterface;
 use App\Services\Contracts\NotificationServiceClientInterface;
 use App\Services\Contracts\TemplateManagementServiceInterface;
@@ -13,6 +14,7 @@ use App\Services\Contracts\UserManagementServiceInterface;
 use App\Services\Contracts\UserServiceClientInterface;
 use App\Services\Implementations\AdminAuthService;
 use App\Services\Implementations\AdminManagementService;
+use App\Services\Implementations\MessagingServiceClient;
 use App\Services\Implementations\NotificationManagementService;
 use App\Services\Implementations\NotificationServiceClient;
 use App\Services\Implementations\TemplateManagementService;
@@ -53,6 +55,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             NotificationServiceClientInterface::class,
             NotificationServiceClient::class,
+        );
+        $this->app->singleton(
+            MessagingServiceClientInterface::class,
+            MessagingServiceClient::class,
         );
 
         // Admin authentication & session management.
