@@ -71,13 +71,13 @@ class TemplateServiceClient implements TemplateServiceClientInterface
             'DELETE'
         );
 
-        $this->throwIfUnauthorized($response);
-
         $json = $response->json() ?? [];
 
-        if ($response->successful() && ($json['success'] ?? false)) {
+        if (($json['success'] ?? false) === true) {
             return true;
         }
+
+        $this->throwIfUnauthorized($response);
 
         throw new ExternalServiceException(
             $json['message'] ?? 'Failed to delete template',
@@ -119,12 +119,13 @@ class TemplateServiceClient implements TemplateServiceClientInterface
 
     private function extractDataOrThrow(Response $response, string $fallbackMessage): array
     {
-        $this->throwIfUnauthorized($response);
         $json = $response->json() ?? [];
 
-        if ($response->successful() && ($json['success'] ?? false)) {
+        if (($json['success'] ?? false) === true) {
             return $json['data'] ?? [];
         }
+
+        $this->throwIfUnauthorized($response);
 
         throw new ExternalServiceException(
             $json['message'] ?? $fallbackMessage,
@@ -137,15 +138,16 @@ class TemplateServiceClient implements TemplateServiceClientInterface
 
     private function extractList(Response $response, string $fallbackMessage): array
     {
-        $this->throwIfUnauthorized($response);
         $json = $response->json() ?? [];
 
-        if ($response->successful() && ($json['success'] ?? false)) {
+        if (($json['success'] ?? false) === true) {
             return [
                 'data'       => $json['data'] ?? [],
                 'pagination' => $json['meta']['pagination'] ?? null,
             ];
         }
+
+        $this->throwIfUnauthorized($response);
 
         throw new ExternalServiceException(
             $json['message'] ?? $fallbackMessage,

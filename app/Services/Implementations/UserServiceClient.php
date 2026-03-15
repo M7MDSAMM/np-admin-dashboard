@@ -69,18 +69,7 @@ class UserServiceClient implements UserServiceClientInterface
             'GET',
         );
 
-        $this->throwIfUnauthorized($response);
-
-        $json = $response->json();
-
-        if ($response->successful() && ($json['success'] ?? false)) {
-            return [
-                'data'       => $json['data'] ?? [],
-                'pagination' => $json['meta']['pagination'] ?? null,
-            ];
-        }
-
-        throw new ExternalServiceException('Failed to fetch admin list', $response->status());
+        return $this->extractList($response, 'Failed to fetch admin list');
     }
 
     public function findAdmin(string $token, string $uuid): ?array
@@ -130,14 +119,18 @@ class UserServiceClient implements UserServiceClientInterface
             'DELETE',
         );
 
-        $this->throwIfUnauthorized($response);
+        $this->ensureSuccess($response, 'Failed to delete admin');
 
-        return $response->successful();
+        return true;
     }
 
     public function toggleActive(string $token, string $uuid): array
     {
-        $response = $this->authenticatedRequest($token)->patch("admins/{$uuid}/toggle-active", []);
+        $response = $this->timedRequest(
+            fn () => $this->authenticatedRequest($token)->patch("admins/{$uuid}/toggle-active", []),
+            "admins/{$uuid}/toggle-active",
+            'PATCH',
+        );
 
         return $this->extractData($response, 'Failed to toggle admin status');
     }
@@ -152,18 +145,7 @@ class UserServiceClient implements UserServiceClientInterface
             'GET',
         );
 
-        $this->throwIfUnauthorized($response);
-
-        $json = $response->json();
-
-        if ($response->successful() && ($json['success'] ?? false)) {
-            return [
-                'data'       => $json['data'] ?? [],
-                'pagination' => $json['meta']['pagination'] ?? null,
-            ];
-        }
-
-        throw new ExternalServiceException('Failed to fetch user list', $response->status());
+        return $this->extractList($response, 'Failed to fetch user list');
     }
 
     public function findUser(string $token, string $uuid): ?array
@@ -384,6 +366,20 @@ class UserServiceClient implements UserServiceClientInterface
         ]);
 
         return $response;
+    }
+
+    private function extractList(Response $response, string $fallbackMessage): array
+    {
+        $json = $response->json() ?? [];
+
+        if (($json['success'] ?? false) === true) {
+            return [
+                'data'       => $json['data'] ?? [],
+                'pagination' => $json['meta']['pagination'] ?? null,
+            ];
+        }
+
+        $this->throwServiceException($response, $json, $fallbackMessage);
     }
 
     private function ensureSuccess(Response $response, string $fallbackMessage): void
