@@ -39,7 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($e->statusCode === 401) {
                 $auth = app(AdminAuthServiceInterface::class);
                 $auth->logout();
-                $message = 'Session expired, please login again';
+                $message = 'Your session is no longer valid. Please sign in again.';
 
                 if ($request->expectsJson()) {
                     return response()->json([

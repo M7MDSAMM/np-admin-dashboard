@@ -8,11 +8,14 @@ use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Catches 401/403 responses from User Service (surfaced as UnauthorizedRemoteException),
- * logs out the admin, and redirects to login with a flash message.
+ * Catches 401/403 responses from remote services (surfaced as UnauthorizedRemoteException).
+ *
+ * 401 → session is invalid: logout, redirect to login.
+ * 403 → session is valid but access denied: keep session, show forbidden.
  */
 class HandleUnauthorizedRemoteMiddleware
 {
@@ -25,10 +28,17 @@ class HandleUnauthorizedRemoteMiddleware
         try {
             return $next($request);
         } catch (UnauthorizedRemoteException $e) {
-            // 401 → session is invalid; logout and redirect/login.
+            // 401 → session is invalid; logout and redirect to login.
             if ($e->statusCode === Response::HTTP_UNAUTHORIZED) {
+                Log::warning('auth.remote_unauthorized', [
+                    'admin_uuid'     => $this->auth->getAdmin()['uuid'] ?? null,
+                    'service'        => $e->serviceName,
+                    'error_code'     => $e->errorCode,
+                    'correlation_id' => $e->correlationId ?? $request->header('X-Correlation-Id', ''),
+                ]);
+
                 $this->auth->logout();
-                $message = 'Session expired, please login again';
+                $message = 'Your session is no longer valid. Please sign in again.';
 
                 if ($request->expectsJson()) {
                     return response()->json([
@@ -43,6 +53,13 @@ class HandleUnauthorizedRemoteMiddleware
             }
 
             // 403 → keep session; show forbidden.
+            Log::warning('auth.remote_forbidden', [
+                'admin_uuid'     => $this->auth->getAdmin()['uuid'] ?? null,
+                'service'        => $e->serviceName,
+                'error_code'     => $e->errorCode,
+                'correlation_id' => $e->correlationId ?? $request->header('X-Correlation-Id', ''),
+            ]);
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'success'        => false,

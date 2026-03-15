@@ -25,7 +25,7 @@ class RequireAdminSessionMiddleware
         if ($this->auth->isTokenExpired()) {
             $this->auth->logout();
 
-            return redirect()->route('login')->with('error', 'Session expired, please login again');
+            return redirect()->route('login')->with('error', 'Your session has expired. Please sign in again.');
         }
 
         if (! $this->auth->isAuthenticated()) {

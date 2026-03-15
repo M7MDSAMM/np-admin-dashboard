@@ -73,7 +73,7 @@ class MessagingServiceClient implements MessagingServiceClientInterface
         $token = $this->auth->getToken();
 
         if (! $token) {
-            throw new UnauthorizedRemoteException('Unauthorized', 401, 'AUTH_INVALID', request()->header('X-Correlation-Id', ''));
+            throw new UnauthorizedRemoteException('Unauthorized', 401, 'AUTH_INVALID', request()->header('X-Correlation-Id', ''), [], 'messaging-service');
         }
 
         return $this->request()->withToken($token);
@@ -114,6 +114,7 @@ class MessagingServiceClient implements MessagingServiceClientInterface
                 $json['error_code'] ?? null,
                 $json['correlation_id'] ?? $response->header('X-Correlation-Id', ''),
                 $json['errors'] ?? [],
+                'messaging-service',
             );
         }
     }

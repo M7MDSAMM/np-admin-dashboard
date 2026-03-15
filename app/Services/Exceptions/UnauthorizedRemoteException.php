@@ -3,10 +3,12 @@
 namespace App\Services\Exceptions;
 
 /**
- * Dedicated exception for 401/403 responses from the User Service.
+ * Dedicated exception for 401/403 responses from remote services.
  *
- * Carries the HTTP status plus optional error_code and correlation_id
- * so callers can make user-facing decisions (e.g. logout + redirect).
+ * Carries the HTTP status plus optional error_code, correlation_id,
+ * and the originating service name so callers can make user-facing
+ * decisions (e.g. logout + redirect) and operators can diagnose
+ * which service rejected the token.
  */
 class UnauthorizedRemoteException extends ExternalServiceException
 {
@@ -16,6 +18,7 @@ class UnauthorizedRemoteException extends ExternalServiceException
         ?string $errorCode = null,
         ?string $correlationId = null,
         array $context = [],
+        public readonly ?string $serviceName = null,
     ) {
         parent::__construct($message, $statusCode, $context, $errorCode, $correlationId);
     }

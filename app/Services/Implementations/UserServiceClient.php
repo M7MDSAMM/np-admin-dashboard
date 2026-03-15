@@ -357,6 +357,7 @@ class UserServiceClient implements UserServiceClientInterface
                 $json['error_code'] ?? null,
                 $json['correlation_id'] ?? $response->header('X-Correlation-Id', ''),
                 $json['errors'] ?? [],
+                'user-service',
             );
         }
     }
