@@ -3,26 +3,19 @@
 namespace Tests\Feature;
 
 use App\Services\Contracts\NotificationServiceClientInterface;
-use Carbon\CarbonImmutable;
 use Tests\Support\FakeNotificationServiceClient;
+use Tests\Support\SessionHelper;
 use Tests\TestCase;
 
 class NotificationsUiTest extends TestCase
 {
-    private function actingAsAdmin(string $role = 'admin'): void
-    {
-        $this->withSession([
-            'admin_jwt_token'      => 'test-token',
-            'admin_profile'        => ['uuid' => 'admin-uuid', 'name' => 'Admin', 'role' => $role],
-            'admin_jwt_expires_at' => CarbonImmutable::now()->addHour()->toIso8601String(),
-        ]);
-    }
+    use SessionHelper;
 
     private function fakeClient(?FakeNotificationServiceClient $fake = null): FakeNotificationServiceClient
     {
         $client = $fake ?? new FakeNotificationServiceClient();
         $this->app->instance(NotificationServiceClientInterface::class, $client);
-        // Management service will resolve the fake client automatically.
+
         return $client;
     }
 
@@ -46,10 +39,10 @@ class NotificationsUiTest extends TestCase
         $this->actingAsAdmin();
         $fake = $this->fakeClient();
         $fake->nextCreateResponse['data'] = [
-            'uuid' => 'notif-123',
-            'user_uuid' => 'user-uuid',
+            'uuid'         => 'notif-123',
+            'user_uuid'    => 'user-uuid',
             'template_key' => 'welcome_email',
-            'status' => 'queued',
+            'status'       => 'queued',
         ];
 
         $payload = [
@@ -71,12 +64,12 @@ class NotificationsUiTest extends TestCase
         $this->actingAsAdmin();
         $fake = $this->fakeClient();
         $fake->nextGetResponse['data'] = [
-            'uuid' => 'notif-123',
-            'user_uuid' => 'user-uuid',
+            'uuid'         => 'notif-123',
+            'user_uuid'    => 'user-uuid',
             'template_key' => 'reset_password',
-            'channels' => ['email'],
-            'status' => 'queued',
-            'variables' => ['name' => 'Sam'],
+            'channels'     => ['email'],
+            'status'       => 'queued',
+            'variables'    => ['name' => 'Sam'],
         ];
 
         $this->get('/notifications/notif-123')

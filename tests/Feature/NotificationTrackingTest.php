@@ -4,13 +4,15 @@ namespace Tests\Feature;
 
 use App\Services\Contracts\MessagingServiceClientInterface;
 use App\Services\Contracts\NotificationServiceClientInterface;
-use Carbon\CarbonImmutable;
 use Tests\Support\FakeMessagingServiceClient;
 use Tests\Support\FakeNotificationServiceClient;
+use Tests\Support\SessionHelper;
 use Tests\TestCase;
 
 class NotificationTrackingTest extends TestCase
 {
+    use SessionHelper;
+
     private FakeNotificationServiceClient $fakeNotification;
     private FakeMessagingServiceClient $fakeMessaging;
 
@@ -21,15 +23,6 @@ class NotificationTrackingTest extends TestCase
         $this->fakeMessaging = new FakeMessagingServiceClient();
         $this->app->instance(NotificationServiceClientInterface::class, $this->fakeNotification);
         $this->app->instance(MessagingServiceClientInterface::class, $this->fakeMessaging);
-    }
-
-    private function actingAsAdmin(): void
-    {
-        $this->withSession([
-            'admin_jwt_token'      => 'test-token',
-            'admin_profile'        => ['uuid' => 'admin-uuid', 'name' => 'Admin', 'role' => 'admin'],
-            'admin_jwt_expires_at' => CarbonImmutable::now()->addHour()->toIso8601String(),
-        ]);
     }
 
     // ── 1. Notifications list page ────────────────────────────────────
