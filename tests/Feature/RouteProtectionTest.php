@@ -109,7 +109,7 @@ class RouteProtectionTest extends TestCase
 
     public function test_health_returns_ok(): void
     {
-        $this->getJson('/health')->assertOk()->assertJson(['status' => 'ok']);
+        $this->getJson('/health')->assertOk()->assertJson(['success' => true, 'data' => ['status' => 'healthy']]);
     }
 
     public function test_correlation_id_returned(): void

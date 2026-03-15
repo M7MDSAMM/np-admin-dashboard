@@ -12,6 +12,10 @@ class HealthTest extends TestCase
 
         $response->assertOk();
         $this->assertNotEmpty($response->headers->get('X-Correlation-Id'));
-        $this->assertArrayHasKey('version', $response->json());
+        $response->assertJsonPath('success', true);
+        $response->assertJsonPath('data.service', 'admin-dashboard');
+        $response->assertJsonPath('data.status', 'healthy');
+        $this->assertArrayHasKey('version', $response->json('data'));
+        $this->assertArrayHasKey('environment', $response->json('data'));
     }
 }
